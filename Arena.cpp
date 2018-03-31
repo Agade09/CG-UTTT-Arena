@@ -53,6 +53,16 @@ struct vec{
     }
 };
 
+inline istream& operator>>(istream &is,vec &r){
+    is >> r.y >> r.x;
+    return is;
+}
+
+inline ostream& operator<<(ostream &os,const vec &r){
+    os << r.y << " " << r.x;
+    return os;
+}
+
 struct mini_board{
     private:
         array<int,W*W> G;
@@ -96,6 +106,9 @@ struct mini_board{
         }
         inline void update_winner(){
             winner=complete();
+        }
+        inline bool full()const{
+            return none_of(G.begin(),G.end(),[](const int a){return a==0;});
         }
 };
 
@@ -156,6 +169,12 @@ struct state{
         inline void mark(const vec &r,const int id){
             const vec mini=r.sub_board();
             if(G[mini.idx()][r.sub_board_vec()]!=0 || (!unrestricted_turn() && mini!=current)){
+                if(G[mini.idx()][r.sub_board_vec()]!=0){
+                    cerr << r << " is already marked" << endl;
+                }
+                else if(!unrestricted_turn() && mini!=current){
+                    cerr << r << " is on the wrong mini board: " << mini << " instead of " << current << endl;
+                }
                 throw(3);
             }
             G[mini.idx()][r.sub_board_vec()]=id;
@@ -163,7 +182,7 @@ struct state{
             if(G[mini.idx()].winner!=0){
                 update_winner();
             }
-            if(G[r.sub_board_vec().idx()].winner!=0){
+            if(G[r.sub_board_vec().idx()].winner!=0 || G[r.sub_board_vec().idx()].full()){
                 current=vec{W*W+1,W*W};
             }
             else{
@@ -216,16 +235,6 @@ struct state{
 };
 
 typedef vec action;
-
-inline istream& operator>>(istream &is,vec &r){
-    is >> r.y >> r.x;
-    return is;
-}
-
-inline ostream& operator<<(ostream &os,const vec &r){
-    os << r.y << " " << r.x;
-    return os;
-}
 
 inline string EmptyPipe(const int fd){
     int nbytes;
@@ -373,6 +382,7 @@ action StringToAction(const state &S,const string &M_Str){
     if(ss >> mv){
         return mv;
     }
+    cerr << M_Str << " is not a valid move" << endl;
     throw(3);
 }
 
